@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Planner - Senior Companion</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        .trip-planner-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .planner-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .input-section {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .budget-input {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .budget-input input {
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 150px;
+        }
+        
+        .budget-input::before {
+            content: "₹";
+            position: absolute;
+            left: 10px;
+            color: #555;
+        }
+        
+        .distance-filter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .distance-filter select {
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            background-color: white;
+        }
+        
+        .plan-button {
+            padding: 0.8rem 1.5rem;
+            background: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .plan-button:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+        }
+        
+        .plan-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading-spinner {
+            display: none;
+            margin: 2rem auto;
+            text-align: center;
+        }
+        
+        .loading-spinner i {
+            font-size: 2rem;
+            color: #4a90e2;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results-section {
+            display: none;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .results-title {
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .places-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .place-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        
+        .place-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .place-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .place-details {
+            margin-bottom: 1rem;
+        }
+        
+        .place-detail {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        
+        .place-detail i {
+            color: #4a90e2;
+            width: 20px;
+        }
+        
+        .directions-button {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #4a90e2;
+            color: white;
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        
+        .directions-button:hover {
+            background: #357abd;
+        }
+        
+        .error-message {
+            display: none;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .back-button {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: #4a90e2;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            margin-top: 1rem;
+            transition: all 0.3s;
+        }
+        
+        .back-button:hover {
+            background: #357abd;
+            transform: translateY(-2px);
+        }
+        
+        .map-container {
+            height: 300px;
+            margin-bottom: 2rem;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 768px) {
+            .budget-input {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .places-list {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">Senior Companion</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="index.html#services">Services</a></li>
+                <li><a href="index.html#resources">Resources</a></li>
+                <li><a href="index.html#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="trip-planner-container">
+        <h1>Trip Planner</h1>
+        <p>Discover exciting places to visit near you based on your budget.</p>
+        
+        <div class="planner-card">
+            <div class="input-section">
+                <div class="budget-input">
+                    <label for="budget">Your Budget (₹):</label>
+                    <input type="number" id="budget" min="0" placeholder="Enter your budget">
+                </div>
+                <div class="distance-filter">
+                    <label for="distance">Search Radius:</label>
+                    <select id="distance">
+                        <option value="5">5 km</option>
+                        <option value="10">10 km</option>
+                        <option value="20">20 km</option>
+                        <option value="30">30 km</option>
+                        <option value="40">40 km</option>
+                        <option value="50">50 km</option>
+                        <option value="60" selected>60 km</option>
+                    </select>
+                </div>
+                <button id="plan-button" class="plan-button">
+                    <i class="fas fa-map-marked-alt"></i> Plan My Trip
+                </button>
+            </div>
+            
+            <div id="error-message" class="error-message">
+                <i class="fas fa-exclamation-circle"></i> <span id="error-text">Unable to get your location. Please enable location services and try again.</span>
+            </div>
+            
+            <div id="map-container" class="map-container"></div>
+            
+            <div id="loading-spinner" class="loading-spinner">
+                <i class="fas fa-spinner"></i>
+                <p>Finding places for you...</p>
+            </div>
+            
+            <div id="results-section" class="results-section">
+                <div class="results-header">
+                    <h2 class="results-title">Places to Visit</h2>
+                    <span id="results-count">0 places found</span>
+                </div>
+                <div id="places-list" class="places-list">
+                    <!-- Places will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <a href="index.html#activities" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Activities
+        </a>
+    </main>
+
+    <script src="script.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        // Initialize variables
+        let map;
+        let userLocation = null;
+        let places = [];
+        let markers = [];
+        let searchRadius = 60; // Default search radius in km
+        
+        // DOM elements
+        const budgetInput = document.getElementById('budget');
+        const distanceSelect = document.getElementById('distance');
+        const planButton = document.getElementById('plan-button');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const resultsSection = document.getElementById('results-section');
+        const placesList = document.getElementById('places-list');
+        const resultsCount = document.getElementById('results-count');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const mapContainer = document.getElementById('map-container');
+        
+        // Initialize the map
+        function initMap() {
+            // Default center (will be updated with user's location)
+            const defaultCenter = [40.7128, -74.0060]; // New York City
+            
+            // Create the map
+            map = L.map('map-container').setView(defaultCenter, 13);
+            
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            // Get user's location
+            getUserLocation();
+        }
+        
+        // Get user's current location
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        
+                        // Update map center
+                        map.setView([userLocation.lat, userLocation.lng], 13);
+                        
+                        // Add a marker for user's location
+                        L.marker([userLocation.lat, userLocation.lng], {
+                            icon: L.divIcon({
+                                className: 'user-location-marker',
+                                html: '<i class="fas fa-map-marker-alt" style="color: #4a90e2; font-size: 24px;"></i>',
+                                iconSize: [24, 24],
+                                iconAnchor: [12, 24]
+                            })
+                        }).addTo(map).bindPopup('Your Location').openPopup();
+                        
+                        // Enable the plan button
+                        planButton.disabled = false;
+                    },
+                    (error) => {
+                        console.error('Error getting location:', error);
+                        errorMessage.style.display = 'block';
+                        
+                        if (error.code === 1) {
+                            errorText.textContent = 'Location access denied. Please enable location services and try again.';
+                        } else if (error.code === 2) {
+                            errorText.textContent = 'Location unavailable. Please check your connection and try again.';
+                        } else {
+                            errorText.textContent = 'Unable to get your location. Please try again.';
+                        }
+                    }
+                );
+            } else {
+                errorMessage.style.display = 'block';
+                errorText.textContent = 'Geolocation is not supported by your browser.';
+            }
+        }
+        
+        // Search for nearby places
+        function searchNearbyPlaces() {
+            const budget = parseFloat(budgetInput.value);
+            
+            if (isNaN(budget) || budget <= 0) {
+                alert('Please enter a valid budget amount.');
+                return;
+            }
+            
+            if (!userLocation) {
+                errorMessage.style.display = 'block';
+                errorText.textContent = 'Unable to get your location. Please enable location services and try again.';
+                return;
+            }
+            
+            // Show loading spinner
+            loadingSpinner.style.display = 'block';
+            resultsSection.style.display = 'none';
+            errorMessage.style.display = 'none';
+            
+            // Clear previous results
+            placesList.innerHTML = '';
+            places = [];
+            
+            // Clear previous markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Use Overpass API to find nearby attractions
+            const query = `
+                [out:json][timeout:25];
+                (
+                    node["tourism"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["amenity"="restaurant"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["amenity"="cafe"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["leisure"="park"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["leisure"="playground"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["leisure"="garden"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["amenity"="cinema"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["amenity"="theatre"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["amenity"="marketplace"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                    node["amenity"="shopping_centre"](around:${searchRadius * 1000},${userLocation.lat},${userLocation.lng});
+                );
+                out body;
+                >;
+                out skel qt;
+            `;
+            
+            fetch('https://overpass-api.de/api/interpreter', {
+                method: 'POST',
+                body: query
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Process the data
+                processPlaces(data.elements, budget);
+            })
+            .catch(error => {
+                console.error('Error fetching places:', error);
+                loadingSpinner.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorText.textContent = 'Unable to find places. Please try again.';
+            });
+        }
+        
+        // Process places and estimate costs
+        function processPlaces(elements, budget) {
+            // Filter out nodes without tags
+            const placesWithTags = elements.filter(element => element.tags && element.tags.name);
+            
+            // Limit to 20 places for performance
+            const limitedPlaces = placesWithTags.slice(0, 20);
+            
+            // Process each place
+            limitedPlaces.forEach((place, index) => {
+                // Get place details
+                const placeDetails = {
+                    id: place.id,
+                    name: place.tags.name,
+                    address: place.tags['addr:street'] ? 
+                        `${place.tags['addr:housenumber'] || ''} ${place.tags['addr:street']}, ${place.tags['addr:city'] || ''}` : 
+                        'Address not available',
+                    rating: place.tags.rating || 'N/A',
+                    reviews: place.tags.reviews || 0,
+                    type: place.tags.tourism || place.tags.amenity || place.tags.leisure || 'attraction',
+                    website: place.tags.website || null,
+                    isOpen: place.tags.opening_hours ? 'Open' : null
+                };
+                
+                // Estimate cost (in a real app, this would use OpenAI API)
+                const estimatedCost = estimatePlaceCost(placeDetails.name, placeDetails.type);
+                
+                // Add to places array
+                places.push({
+                    ...placeDetails,
+                    cost: estimatedCost,
+                    location: [place.lat, place.lon]
+                });
+                
+                // Add marker to map
+                addMarker(placeDetails, [place.lat, place.lon], index);
+            });
+            
+            // Display results
+            displayResults(budget);
+        }
+        
+        // Estimate place cost (placeholder function - would use OpenAI API in a real app)
+        function estimatePlaceCost(placeName, placeType) {
+            // This is a placeholder function that returns a random cost based on place type
+            const baseCosts = {
+                'museum': 150,
+                'gallery': 100,
+                'park': 0,
+                'theatre': 250,
+                'cinema': 200,
+                'restaurant': 300,
+                'cafe': 150,
+                'zoo': 180,
+                'aquarium': 220,
+                'playground': 0,
+                'garden': 0,
+                'marketplace': 100,
+                'shopping_centre': 200,
+                'attraction': 150
+            };
+            
+            const baseCost = baseCosts[placeType] || 100;
+            const variation = Math.floor(Math.random() * 100) - 50; // -50 to +50
+            
+            return Math.max(0, baseCost + variation);
+        }
+        
+        // Add marker to map
+        function addMarker(place, position, index) {
+            const marker = L.marker(position, {
+                icon: L.divIcon({
+                    className: 'place-marker',
+                    html: `<div style="background-color: #4a90e2; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold;">${index + 1}</div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(map);
+            
+            // Calculate distance from user
+            const distance = calculateDistance(
+                userLocation.lat, 
+                userLocation.lng, 
+                position[0], 
+                position[1]
+            );
+            
+            // Add popup to marker
+            marker.bindPopup(`
+                <div style="padding: 5px;">
+                    <h3 style="margin: 0 0 5px 0;">${place.name}</h3>
+                    <p style="margin: 0;">${place.address}</p>
+                    <p style="margin: 5px 0 0 0; font-size: 0.9em; color: #666;">Distance: ${distance.toFixed(1)} km</p>
+                </div>
+            `);
+            
+            // Add to markers array
+            markers.push(marker);
+        }
+        
+        // Calculate distance between two points in kilometers
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the earth in km
+            const dLat = deg2rad(lat2 - lat1);
+            const dLon = deg2rad(lon2 - lon1);
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+                Math.sin(dLon/2) * Math.sin(dLon/2); 
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+            const distance = R * c; // Distance in km
+            return distance;
+        }
+        
+        function deg2rad(deg) {
+            return deg * (Math.PI/180);
+        }
+        
+        // Display results
+        function displayResults(budget) {
+            // Filter places by budget
+            const affordablePlaces = places.filter(place => place.cost <= budget);
+            
+            // Sort by rating (highest first)
+            affordablePlaces.sort((a, b) => {
+                if (a.rating === 'N/A') return 1;
+                if (b.rating === 'N/A') return -1;
+                return b.rating - a.rating;
+            });
+            
+            // Update results count
+            resultsCount.textContent = `${affordablePlaces.length} places found`;
+            
+            // Display places
+            affordablePlaces.forEach((place, index) => {
+                const placeCard = document.createElement('div');
+                placeCard.className = 'place-card';
+                
+                // Create place card HTML
+                placeCard.innerHTML = `
+                    <div class="place-name">${index + 1}. ${place.name}</div>
+                    <div class="place-details">
+                        <div class="place-detail">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <span>${place.address}</span>
+                        </div>
+                        <div class="place-detail">
+                            <i class="fas fa-route"></i>
+                            <span>Distance: ${calculateDistance(
+                                userLocation.lat, 
+                                userLocation.lng, 
+                                place.location[0], 
+                                place.location[1]
+                            ).toFixed(1)} km</span>
+                        </div>
+                        <div class="place-detail">
+                            <i class="fas fa-tag"></i>
+                            <span>${place.type}</span>
+                        </div>
+                        <div class="place-detail">
+                            <i class="fas fa-rupee-sign"></i>
+                            <span>Estimated cost: ₹${place.cost}</span>
+                        </div>
+                        ${place.isOpen ? `
+                            <div class="place-detail">
+                                <i class="fas fa-clock"></i>
+                                <span>${place.isOpen}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <a href="https://www.openstreetmap.org/?mlat=${place.location[0]}&mlon=${place.location[1]}&zoom=15" 
+                       class="directions-button" target="_blank">
+                        <i class="fas fa-directions"></i> Get Directions
+                    </a>
+                `;
+                
+                placesList.appendChild(placeCard);
+            });
+            
+            // Hide loading spinner and show results
+            loadingSpinner.style.display = 'none';
+            resultsSection.style.display = 'block';
+            
+            // If no places found within budget
+            if (affordablePlaces.length === 0) {
+                placesList.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                        <i class="fas fa-search" style="font-size: 3rem; color: #95a5a6; margin-bottom: 1rem;"></i>
+                        <h3>No places found within your budget</h3>
+                        <p>Try increasing your budget or searching in a different area.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Event listeners
+        planButton.addEventListener('click', searchNearbyPlaces);
+        distanceSelect.addEventListener('change', function() {
+            searchRadius = parseInt(this.value);
+        });
+        
+        // Initialize the map when the page loads
+        window.addEventListener('load', initMap);
+    </script>
+</body>
+</html> 

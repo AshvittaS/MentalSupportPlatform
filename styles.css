@@ -540,4 +540,246 @@ footer {
     .timer {
         color: #0000FF;
     }
+}
+
+/* Trip Planner Section */
+.trip-planner-section {
+    padding: 4rem 2rem;
+    background-color: #f8f9fa;
+}
+
+.trip-planner-content {
+    display: flex;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 3rem;
+    align-items: center;
+}
+
+.trip-planner-image {
+    flex: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.trip-planner-image img {
+    width: 100%;
+    height: auto;
+    display: block;
+    transition: transform 0.5s;
+}
+
+.trip-planner-image img:hover {
+    transform: scale(1.05);
+}
+
+.trip-planner-text {
+    flex: 1;
+}
+
+.trip-planner-text h3 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.trip-planner-text p {
+    color: #555;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.trip-planner-features {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 2rem;
+}
+
+.trip-planner-features li {
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    color: #555;
+}
+
+.trip-planner-features li i {
+    color: #4a90e2;
+    margin-right: 1rem;
+    font-size: 1.2rem;
+    width: 24px;
+}
+
+.trip-planner-button {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background: #4a90e2;
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.trip-planner-button:hover {
+    background: #357abd;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+}
+
+@media (max-width: 768px) {
+    .trip-planner-content {
+        flex-direction: column;
+    }
+    
+    .trip-planner-image {
+        order: 2;
+    }
+    
+    .trip-planner-text {
+        order: 1;
+    }
+}
+
+/* Creative Activities Section */
+.activities {
+    padding: 5rem 2rem;
+    background-color: #f0f7ff;
+}
+
+.activities h2 {
+    text-align: center;
+    color: #2c3e50;
+    font-size: 2.5rem;
+    margin-bottom: 3rem;
+    position: relative;
+}
+
+.activities h2:after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 4px;
+    background: #4a90e2;
+    margin: 1rem auto 0;
+    border-radius: 2px;
+}
+
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.activity-card {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.activity-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.activity-card:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 5px;
+    background: linear-gradient(90deg, #4a90e2, #357abd);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.activity-card:hover:before {
+    opacity: 1;
+}
+
+.activity-card i {
+    font-size: 3rem;
+    color: #4a90e2;
+    margin-bottom: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+.activity-card:hover i {
+    transform: scale(1.2);
+}
+
+.activity-card h3 {
+    color: #2c3e50;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.activity-card p {
+    color: #555;
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+}
+
+.activity-button {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    background: #4a90e2;
+    color: white;
+    text-decoration: none;
+    border-radius: 25px;
+    font-weight: 500;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.activity-button:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 100%;
+    background: #357abd;
+    transition: width 0.3s ease;
+    z-index: -1;
+}
+
+.activity-button:hover {
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+}
+
+.activity-button:hover:before {
+    width: 100%;
+}
+
+/* Responsive adjustments for activities section */
+@media (max-width: 768px) {
+    .activities {
+        padding: 3rem 1rem;
+    }
+    
+    .activities h2 {
+        font-size: 2rem;
+    }
+    
+    .activity-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .activity-card {
+        padding: 1.5rem;
+    }
 } 
